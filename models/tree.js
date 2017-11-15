@@ -24,7 +24,7 @@ const TreeSchema = new Schema({
     rank: {
         type: String
     },
-    availiable: {
+    available: {
         type: Boolean,
         default: false
     },

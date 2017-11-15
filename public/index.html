@@ -1,0 +1,245 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Forest</title>
+    <link rel="shortcut icon" href="favicon.ico">
+
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/css/materialize.min.css">
+    <link href="styles.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+    <!-- header -->
+    <div class="App">
+        <header class="App-header">
+            <a href="">
+                <img src="favicon.ico" class="App-logo" alt="logo" />
+            </a>
+            <h1 class="App-title">Welcome to the earth</h1>
+        </header>
+        
+
+
+        <p class="App-intro">
+            To get started, 
+        </p>
+        <p class="App-intro">
+            get started!
+        </p>
+    </div>
+
+    <!-- react app: main content -->
+    <div class="container">
+        <div id="trees">
+                <div class="spinner">
+                        <div class="rect1"></div>
+                        <div class="rect2"></div>
+                        <div class="rect3"></div>
+                        <div class="rect4"></div>
+                        <div class="rect5"></div>
+                </div>
+        </div>
+    </div>
+
+
+
+
+
+
+
+
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://unpkg.com/react@15/dist/react.js"></script>
+    <script src="https://unpkg.com/react-dom@15/dist/react-dom.min.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.100.2/js/materialize.min.js"></script>  
+  
+
+<!-- // ------------------------------- // -->
+
+<!-- // ------------ react ------------ // -->
+
+<!-- // ------------------------------- // -->
+
+<script type="text/babel">
+var Trees = React.createClass({
+    getInitialState: function(){
+        return({
+            trees: [],
+            findlat: -1,
+            findlng: -1,
+            plantbtn: false
+        });
+    },
+    
+
+    render: function(){
+        var trees = this.state.trees;
+        trees = trees.map(function(tree, index){
+            return( // 주변 트리 리스트
+                <li key={index} className="list">
+                    
+                    <span className={tree.obj.available}></span>
+                    <span className="name">{tree.obj.name}</span>
+                    <span className="rank">{tree.obj.rank}</span>
+                    <span className="dist">{Math.floor(tree.dis/1000)} km</span>
+                </li>
+            )
+        });
+
+        // 새 폼 열기
+        const plant = (
+            <div>
+                
+                <form method="POST" id="create" onSubmit={this.handleSubmitPlant}>
+                    <label>Almost Done! Please enter a new tree's name</label>
+
+                    <input type="text" ref="name" name="name" placeholder="Tree's Name" class="validate" required />
+                    <input type="text" ref="rank" name="rank" placeholder="Tree's Something" class="validate" />
+                    <input type="submit" value="YEAH!" className="waves-effect waves-light btn-large" />
+                </form>
+            </div>
+        );
+
+        const blank = (<div></div>);
+
+        return(
+            // Main container
+            <div id="container">
+                
+                <h1 className="title">Plant a tree in your area!&nbsp;
+                    <button onClick={this.handleMyLocation} className="btn btn-floating btn-large orange pulse center">
+                        <i className="material-icons right">location_on</i>
+                </button> 
+                </h1>
+
+                {this.state.plantbtn ? 
+                    <input type="button" ref="close" onClick={this.handleBtnPlant} value="Cancel ▲ " className="waves-effect waves-light btn-large" /> 
+                    : <input type="button" ref="open" onClick={this.handleBtnPlant} value="Plant your tree here ▼" className="waves-effect waves-light btn-large" />}
+                
+                {this.state.plantbtn ? plant : blank}
+
+                    
+                <form id="search" onSubmit={this.handleSubmit}>
+                    
+                    <input id="lng" type="text" ref="lng" placeholder="longitude" class="validate" required />
+                    <input id="lat" type="text" ref="lat" placeholder="latitude" class="validate" required/>
+                    
+                    <input type="submit" value="Find Trees Around Me" className="light-green waves-effect waves-light btn" />                    
+                </form>
+                
+                <div><ul>{trees}</ul></div>
+            </div>
+        );
+    },
+
+    handleBtnPlant: function(){
+        
+        this.setState({
+            plantbtn: !this.state.plantbtn
+        });
+    
+        this.handleMyLocation();
+        this.refs.open.value = 'close';
+    },
+
+    // 나무 심자!
+    handleSubmitPlant: function(e){
+        e.preventDefault();
+        console.log('submit');
+
+        fetch('/api/trees', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: this.refs.name.value,
+              rank: this.refs.rank.value,
+              available: true,
+              geometry : {
+                  type: "point", 
+                  coordinates: [this.state.findlng, this.state.findlat]
+                  }
+            })
+        }).then((json) => {
+            console.log(json);
+            this.handleSubmit(e);
+        });
+    },
+
+    // 내 주변 나무 탐색
+    handleSubmit: function(e){
+        e.preventDefault();
+        var lng = this.refs.lng.value;
+        var lat = this.refs.lat.value;
+
+        fetch('/api/trees?lng='+lng+'&lat='+lat).then(function(data){
+            return data.json();
+        }).then((json) => {
+            console.log(json);
+            this.setState({
+                trees: json
+            });
+            
+        }).then(() => {
+            console.log(this.state.trees.length);
+            if(this.state.trees.length === 0) 
+                this.setState({
+                    trees: [{
+                        obj:{
+                            name: "Can't find trees here, Plant your tree!!",
+                            available: false,
+                            geometry : {"type": "point", "coordinates": [1.1, 0.0]}
+                        },
+                        dis: -1
+                    }]
+                });
+        });
+    },
+
+    
+
+
+    showPosition: function(position){
+        
+        this.setState({
+            findlat: position.coords.latitude,
+            findlng: position.coords.longitude
+        });
+        console.log('lat', this.state.findlat);
+        console.log('lng', this.state.findlng);
+        this.refs.lat.value = this.state.findlat;
+        this.refs.lng.value = this.state.findlng;
+
+    },
+
+    handleMyLocation: function(){
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(this.showPosition);
+            
+        } else { 
+            this.refs.lat.value = 'Geolocation is not supported by this browser.';
+            this.refs.lng.value = 'Geolocation is not supported by this browser.';
+        }
+    }
+
+
+})
+
+
+
+// ---------------------------
+
+
+
+
+ReactDOM.render(<Trees />, document.getElementById('trees'));
+</script>
+
+
+</body>
+</html>
