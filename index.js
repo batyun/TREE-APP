@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 // set up express app
 const app = express();
 
-const MONGO_URL = 'mongodb://jiyunius:Jiyun135!@ds249355.mlab.com:49355/practice';
+const MONGO_URL = 'mongodb://jiyunius:Jiyun135!@ds249355.mlab.com:49355/practice'; // !!! my password is revealed !!!
 // connect to mongodb
 mongoose.connect(MONGO_URL);
 mongoose.Promise = global.Promise;
